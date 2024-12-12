@@ -15,6 +15,9 @@ APPS_DIR = BASE_DIR / "apps"
 # Initialize environment variables
 env = environ.Env()
 
+# Set the auth user model
+AUTH_USER_MODEL = "core.User"
+
 # General
 # ------------------------------------------------------------------------------
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
@@ -74,7 +77,9 @@ THIRD_PARTY_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
 ]
-LOCAL_APPS = []
+LOCAL_APPS = [
+    "apps.core",
+]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 # Authentication
