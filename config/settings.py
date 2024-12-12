@@ -22,6 +22,10 @@ SECRET_KEY = env(
     "DJANGO_SECRET_KEY", default="0939f=2n4l)hb+o(@wpxp)_)ihxiv$7$6mxp1rx6fcu=^+(l+f"
 )
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+CSRF_TRUSTED_ORIGINS = env.list(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    default=["http://localhost:8080", "http://127.0.0.1:8080"],
+)
 
 # Internationalization
 # ------------------------------------------------------------------------------
@@ -66,6 +70,7 @@ THIRD_PARTY_APPS = [
     "django_extensions",
     "storages",
     "djcelery_email",
+    "corsheaders",
 ]
 LOCAL_APPS = []
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -101,6 +106,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # ------------------------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -256,3 +262,7 @@ EMAIL_HOST = env("DJANGO_EMAIL_HOST")
 EMAIL_PORT = env("DJANGO_EMAIL_PORT")
 DEFAULT_FROM_EMAIL = env("DJANGO_DEFAULT_FROM_EMAIL")
 EMAIL_TIMEOUT = 5
+
+# Django CORS Headers
+# -------------------------------------------------------------------------------
+CORS_URLS_REGEX = r"^/api/.*$"
