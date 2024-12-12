@@ -71,6 +71,8 @@ THIRD_PARTY_APPS = [
     "storages",
     "djcelery_email",
     "corsheaders",
+    "crispy_forms",
+    "crispy_bootstrap5",
 ]
 LOCAL_APPS = []
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -145,6 +147,8 @@ TEMPLATES = [
     },
 ]
 FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 
 # Admin
 # ------------------------------------------------------------------------------
