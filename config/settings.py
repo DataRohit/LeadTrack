@@ -50,17 +50,18 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Apps
 # ------------------------------------------------------------------------------
 DJANGO_APPS = [
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
-    "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.admin",
+    "django.contrib.sites",
     "django.forms",
 ]
 THIRD_PARTY_APPS = [
     "django_extensions",
+    "storages",
 ]
 LOCAL_APPS = []
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -159,12 +160,41 @@ LOGGING = {
     "root": {"level": "INFO", "handlers": ["console"]},
 }
 
-# Static Files
+# MinIO
 # ------------------------------------------------------------------------------
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles" / "static"
+MINIO_STORAGE_ENDPOINT = env("MINIO_STORAGE_ENDPOINT", default="localhost:9000")
+MINIO_STORAGE_ACCESS_KEY = env("MINIO_STORAGE_ACCESS_KEY")
+MINIO_STORAGE_SECRET_KEY = env("MINIO_STORAGE_SECRET_KEY")
+MINIO_STORAGE_DOMAIN = env("MINIO_STORAGE_DOMAIN", default="localhost:8080")
+MINIO_STORAGE_USE_HTTPS = False
 
-# Media Files
+# AWS S3
 # ------------------------------------------------------------------------------
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "staticfiles" / "media"
+AWS_S3_ENDPOINT_URL = f"http://{MINIO_STORAGE_ENDPOINT}"
+AWS_ACCESS_KEY_ID = MINIO_STORAGE_ACCESS_KEY
+AWS_SECRET_ACCESS_KEY = MINIO_STORAGE_SECRET_KEY
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = "us-east-1"
+AWS_S3_SIGNATURE_VERSION = "s3v4"
+AWS_DEFAULT_ACL = "private"
+AWS_S3_FILE_OVERWRITE = False
+AWS_QUERYSTRING_AUTH = True
+AWS_S3_CUSTOM_DOMAIN = f"{MINIO_STORAGE_DOMAIN}/minio/storage/{AWS_STORAGE_BUCKET_NAME}"
+
+# Static files settings
+# ------------------------------------------------------------------------------
+STATIC_URL = f"http://{MINIO_STORAGE_DOMAIN}/{AWS_STORAGE_BUCKET_NAME}/static/"
+STATICFILES_STORAGE = "config.storage.static.StaticStorage"
+
+# Media files settings
+# ------------------------------------------------------------------------------
+MEDIA_URL = f"http://{MINIO_STORAGE_DOMAIN}/{AWS_STORAGE_BUCKET_NAME}/media/"
+DEFAULT_FILE_STORAGE = "config.storage.media.MediaStorage"
+
+# Static files finders and directories
+# ------------------------------------------------------------------------------
+STATICFILES_DIRS = [str(APPS_DIR / "static")]
+STATICFILES_FINDERS = [
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+]
