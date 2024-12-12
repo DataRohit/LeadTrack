@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 
 # Imports
+import ssl
 from pathlib import Path
 
 import environ
@@ -17,7 +18,9 @@ env = environ.Env()
 # General
 # ------------------------------------------------------------------------------
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
-SECRET_KEY = env("DJANGO_SECRET_KEY", default="0939f=2n4l)hb+o(@wpxp)_)ihxiv$7$6mxp1rx6fcu=^+(l+f")
+SECRET_KEY = env(
+    "DJANGO_SECRET_KEY", default="0939f=2n4l)hb+o(@wpxp)_)ihxiv$7$6mxp1rx6fcu=^+(l+f"
+)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 # Internationalization
@@ -62,6 +65,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "django_extensions",
     "storages",
+    "djcelery_email",
 ]
 LOCAL_APPS = []
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -109,7 +113,9 @@ MIDDLEWARE = [
 # Session Settings
 # ------------------------------------------------------------------------------
 SESSION_COOKIE_AGE = 21600
-SESSION_EXPIRE_AT_BROWSER_CLOSE = env.bool("SESSION_EXPIRE_AT_BROWSER_CLOSE", default=False)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = env.bool(
+    "SESSION_EXPIRE_AT_BROWSER_CLOSE", default=False
+)
 
 # Templates
 # ------------------------------------------------------------------------------
@@ -198,3 +204,55 @@ STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 ]
+
+# Redis
+# ------------------------------------------------------------------------------
+REDIS_URL = env.str("REDIS_URL", default="redis://redis-service:6379/")
+REDIS_SSL = REDIS_URL.startswith("rediss://")
+
+# Caches
+# ------------------------------------------------------------------------------
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "KEY_PREFIX": "leadtrack",
+            "TIMEOUT": 900,
+        },
+    }
+}
+
+# Celery
+# ------------------------------------------------------------------------------
+if USE_TZ:
+    CELERY_TIMEZONE = TIME_ZONE
+CELERY_BROKER_URL = env("CELERY_BROKER_URL")
+CELERY_BROKER_USE_SSL = {"ssl_cert_reqs": ssl.CERT_NONE} if REDIS_SSL else None
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_RESULT_EXTENDED = True
+CELERY_RESULT_BACKEND_ALWAYS_RETRY = True
+CELERY_RESULT_BACKEND_MAX_RETRIES = 10
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TASK_TIME_LIMIT = 5 * 60
+CELERY_TASK_SOFT_TIME_LIMIT = 60
+CELERY_WORKER_SEND_TASK_EVENTS = True
+CELERY_TASK_SEND_SENT_EVENT = True
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_EMAIL_TASK_CONFIG = {
+    "rate_limit": "50/m",
+    "ignore_result": True,
+}
+
+# Email
+# ------------------------------------------------------------------------------
+EMAIL_BACKEND = env.str(
+    "DJANGO_EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
+)
+EMAIL_HOST = env("DJANGO_EMAIL_HOST")
+EMAIL_PORT = env("DJANGO_EMAIL_PORT")
+DEFAULT_FROM_EMAIL = env("DJANGO_DEFAULT_FROM_EMAIL")
+EMAIL_TIMEOUT = 5

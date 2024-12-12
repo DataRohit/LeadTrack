@@ -67,10 +67,21 @@ COPY ./compose/server/entrypoint /entrypoint
 RUN sed -i 's/\r$//g' /entrypoint
 RUN chmod +x /entrypoint
 
+
 # Copy start script and set permissions
 COPY ./compose/server/start /start
 RUN sed -i 's/\r$//g' /start
 RUN chmod +x /start
+
+# Copy Celery worker start script and set permissions
+COPY ./compose/server/celery/worker/start /start-celeryworker
+RUN sed -i 's/\r$//g' /start-celeryworker
+RUN chmod +x /start-celeryworker
+
+# Copy Celery Flower start script and set permissions
+COPY ./compose/server/celery/flower/start /start-flower
+RUN sed -i 's/\r$//g' /start-flower
+RUN chmod +x /start-flower
 
 
 # Copy application code to WORKDIR

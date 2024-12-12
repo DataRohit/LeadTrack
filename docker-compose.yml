@@ -5,6 +5,12 @@ volumes:
     leadtrack_minio_data:
         name: leadtrack_minio_data
         driver: local
+    leadtrack_mailpit_data:
+        name: leadtrack_mailpit_data
+        driver: local
+    leadtrack_redis_data:
+        name: leadtrack_redis_data
+        driver: local
     leadtrack_nginx_logs:
         name: leadtrack_nginx_logs
         driver: local
@@ -18,12 +24,43 @@ services:
         depends_on:
             - postgres-service
             - minio-service
+            - mailpit-service
+            - redis-service
         volumes:
             - .:/app:z
         env_file:
             - ./.envs/.django.env
             - ./.envs/.postgres.env
         command: /start
+        networks:
+            - leadtrack_network
+
+    celery-worker-service:
+        <<: *server-service
+        container_name: celery-worker-service
+        image: celery-worker-service
+        depends_on:
+            - postgres-service
+            - mailpit-service
+            - minio-service
+            - redis-service
+        ports: []
+        command: /start-celeryworker
+        networks:
+            - leadtrack_network
+
+    celery-flower-service:
+        <<: *server-service
+        container_name: celery-flower-service
+        image: celery-flower-service
+        depends_on:
+            - postgres-service
+            - mailpit-service
+            - minio-service
+            - redis-service
+        ports:
+            - "5555:5555"
+        command: /start-flower
         networks:
             - leadtrack_network
 
@@ -49,6 +86,26 @@ services:
         env_file:
             - ./.envs/.minio.env
         command: server --console-address :9090 --address :9000 /data
+        networks:
+            - leadtrack_network
+
+    mailpit-service:
+        image: axllent/mailpit:latest
+        container_name: mailpit-service
+        volumes:
+            - leadtrack_mailpit_data:/data
+        ports:
+            - "8025:8025"
+        env_file:
+            - ./.envs/.mailpit.env
+        networks:
+            - leadtrack_network
+
+    redis-service:
+        image: redis:6-alpine
+        container_name: redis-service
+        volumes:
+            - leadtrack_redis_data:/data
         networks:
             - leadtrack_network
 
