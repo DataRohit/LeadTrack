@@ -1,0 +1,39 @@
+volumes:
+    leadtrack_postgres_data:
+        name: leadtrack_postgres_data
+        driver: local
+
+services:
+    server-service: &server-service
+        build:
+            context: .
+            dockerfile: ./compose/server/dockerfile
+        container_name: server-service
+        depends_on:
+            - postgres-service
+        volumes:
+            - .:/app:z
+        ports:
+            - "8000:8000"
+        env_file:
+            - ./.envs/.django.env
+            - ./.envs/.postgres.env
+        command: /start
+        networks:
+            - leadtrack_network
+
+    postgres-service:
+        image: postgres:16
+        container_name: postgres-service
+        volumes:
+            - leadtrack_postgres_data:/var/lib/postgresql/data
+        ports:
+            - "5432:5432"
+        env_file:
+            - ./.envs/.postgres.env
+        networks:
+            - leadtrack_network
+
+networks:
+    leadtrack_network:
+        driver: bridge
