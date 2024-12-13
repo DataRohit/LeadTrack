@@ -1,11 +1,17 @@
 # Imports
 from django.conf import settings
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from django.views import defaults as default_views
 
 # URL patterns
 urlpatterns = [path(settings.ADMIN_URL, admin.site.urls)]
+
+# App URL patterns
+urlpatterns += [
+    path("", include("apps.core.urls", namespace="core")),
+    path("accounts/", include("apps.accounts.urls", namespace="accounts")),
+]
 
 # If the project is in debug mode
 if settings.DEBUG:

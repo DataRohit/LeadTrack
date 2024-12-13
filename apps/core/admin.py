@@ -4,7 +4,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.forms import UserChangeForm, UserCreationForm
-from apps.core.models import User
+from apps.core.models import TokenRecord, User
 
 
 # Register the User model
@@ -98,3 +98,53 @@ class UserAdmin(BaseUserAdmin):
 
     # Set readonly fields
     readonly_fields = ["pkid", "id", "last_login", "date_joined"]
+
+
+# Register the TokenRecord model
+@admin.register(TokenRecord)
+class TokenRecordAdmin(admin.ModelAdmin):
+    """Token Record Admin
+
+    Token Record Admin for the TokenRecord model.
+
+    Inherits:
+        admin.ModelAdmin
+
+    Attributes:
+        list_display (list[str]): The list of fields to display.
+        list_display_links (list[str]): The list of fields to display as links.
+        search_fields (list[str]): The list of fields to search.
+        ordering (list[str]): The list of fields to order by.
+        fieldsets (tuple[str]): The fieldsets for the TokenRecord model.
+    """
+
+    # Set model
+    model = TokenRecord
+
+    # List display
+    list_display = [
+        "user",
+        "token_type",
+        "token",
+        "created_at",
+        "is_used",
+    ]
+
+    # List display links
+    list_display_links = ["user", "token_type", "is_used"]
+
+    # Search fields
+    search_fields = ["user__email", "token_type", "is_used"]
+
+    # Ordering
+    ordering = ["-created_at"]
+
+    # Fieldsets
+    fieldsets = (
+        (_("User"), {"fields": ("user",)}),
+        (_("Token"), {"fields": ("token_type", "token")}),
+        (_("Token Information"), {"fields": ("created_at", "is_used")}),
+    )
+
+    # Set readonly fields
+    readonly_fields = ["token", "created_at", "is_used"]

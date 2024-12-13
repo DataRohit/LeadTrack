@@ -1,11 +1,13 @@
 # Imports
 import uuid
+from datetime import timedelta
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.constants import ROLE_CHOICES
+from apps.core.constants import ROLE_CHOICES, TOKEN_TYPES
 from apps.core.managers import UserManager
 from apps.core.validators import UsernameValidator
 
@@ -101,3 +103,39 @@ class User(AbstractUser):
             str: The full name of the user.
         """
         return f"{self.first_name} {self.last_name}".strip()
+
+
+# Token Record Model
+class TokenRecord(models.Model):
+    """Token Record Model
+
+    Token record model for the application.
+
+    Inherits:
+        models.Model
+
+    Attributes:
+        user (models.ForeignKey): The user of the token.
+        token_type (models.CharField): The type of the token.
+        token (models.CharField): The token.
+        created_at (models.DateTimeField): The created date of the token.
+        is_used (models.BooleanField): The used status of the token.
+
+    Properties:
+        is_expired (bool): The expired status of the token.
+    """
+
+    # Attributes
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tokens")
+    token_type = models.CharField(
+        max_length=24, choices=TOKEN_TYPES, default=TOKEN_TYPES[0][0]
+    )
+    token = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    # Method to get the expired status of the token
+    @property
+    def is_expired(self, expiry_duration=timedelta(hours=1)):
+        # Return the expired status
+        return now() > self.created_at + expiry_duration

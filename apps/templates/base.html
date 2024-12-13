@@ -10,11 +10,12 @@
                 LeadTrack
             {% endblock title %}
         </title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
         <meta name="description"
-              content="LeadTrack is a user-friendly CRM tool designed to streamline lead management and enhance customer relationships. With its intuitive interface and powerful tracking capabilities, LeadTrack empowers businesses to convert leads into opportunities efficiently, ensuring no potential client is overlooked." />
+              content="LeadTrack is an intelligent CRM solution that transforms lead management with intuitive tracking, powerful analytics, and seamless customer relationship tools." />
         <meta name="keywords"
-              content="CRM, lead management, customer relationships, business, tracking, opportunities, python, django, postgres, minio, docker, mailpit, redis, nginx" />
+              content="CRM, lead management, sales, customer relationships, business intelligence, tracking, opportunities" />
         <meta name="author" content="Rohit Vilas Ingole" />
         <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />
         {% block css %}
@@ -33,12 +34,14 @@
                     referrerpolicy="no-referrer"></script>
             <script defer src="{% static 'js/project.js' %}"></script>
         {% endblock javascript %}
+        <meta name="theme-color" content="#007bff" />
     </head>
     <body class="{% block bodyclass %}{% endblock bodyclass %}">
-        {% block body %}
-        {% endblock body %}
-        {% block modal %}
-        {% endblock modal %}
+        {% include "components/navbar.html" %}
+        <div class="container mt-4">
+            {% block content %}
+            {% endblock content %}
+        </div>
         {% block inline_javascript %}
         {% endblock inline_javascript %}
     </body>

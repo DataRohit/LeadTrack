@@ -8,3 +8,9 @@ ROLE_CHOICES = (
     ("sales", _("Sales")),
     ("support", _("Support")),
 )
+
+# Token Types
+TOKEN_TYPES = (
+    ("activation", _("Activation")),
+    ("password_reset", _("Password Reset")),
+)

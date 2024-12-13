@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}
+    LeadTrack - Activate Account
+{% endblock title %}
+{% block content %}
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-6">
+                <div class="card shadow-sm border-2 rounded-3">
+                    <div class="card-body p-4 text-center">
+                        <h2 class="mb-4">Activate Your Account</h2>
+                        <p class="mb-4">
+                            Hello <strong>{{ user.full_name }}</strong> ({{ user.email }}),
+                            <br>
+                            Please activate your account to get started with LeadTrack.
+                        </p>
+                        <form method="post" action="{% url 'accounts:activate' uidb64 token %}">
+                            {% csrf_token %}
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Activate Account</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
