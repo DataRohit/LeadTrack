@@ -3,13 +3,20 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
+from django.utils.html import strip_tags
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.generic import View
 
-from apps.accounts.forms import LoginForm, SignupForm
+from apps.accounts.forms import (
+    ForgotPasswordForm,
+    LoginForm,
+    ResetPasswordForm,
+    SignupForm,
+)
 from apps.core.models import TokenRecord
 
 # User Model
@@ -30,6 +37,11 @@ class SignupView(View):
 
     # Method to handle get request
     def get(self, request):
+        # If user is authenticated
+        if request.user.is_authenticated:
+            # Redirect to the home page
+            return redirect("core:home")
+
         # Initialize the form
         form = SignupForm()
 
@@ -61,14 +73,22 @@ class SignupView(View):
                 f"/accounts/activate/{uid}/{token}/"
             )
 
-            # Send the activation email
-            send_mail(
-                "Activate Your Account",
-                f"Click the link to verify your email: {activation_link}",
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=False,
+            # Prepare the email data
+            subject = "Activate Your Account"
+            html_content = render_to_string(
+                "accounts/emails/activation_email.html",
+                {"user": user, "activation_link": activation_link},
             )
+            text_content = strip_tags(html_content)
+
+            # Create the email
+            email = EmailMultiAlternatives(
+                subject, text_content, settings.DEFAULT_FROM_EMAIL, [user.email]
+            )
+            email.attach_alternative(html_content, "text/html")
+
+            # Send the email
+            email.send()
 
             # Create a new token record
             TokenRecord.objects.create(user=user, token_type="activation", token=token)
@@ -200,6 +220,11 @@ class LoginView(View):
 
     # Method to handle get request
     def get(self, request):
+        # If user is authenticated
+        if request.user.is_authenticated:
+            # Redirect to the home page
+            return redirect("core:home")
+
         # Initialize the form
         form = LoginForm()
 
@@ -272,3 +297,206 @@ class LogoutView(View):
 
         # Redirect to the login page
         return redirect("accounts:login")
+
+
+# Forgot Password View
+class ForgotPasswordView(View):
+    """Forgot Password View.
+
+    Inherits:
+        View
+
+    Methods:
+        get: Method to handle get request
+        post: Method to handle post request
+    """
+
+    # Method to handle get request
+    def get(self, request):
+        # If user is authenticated
+        if request.user.is_authenticated:
+            # Redirect to the home page
+            return redirect("core:home")
+
+        # Initialize the form
+        form = ForgotPasswordForm()
+
+        # Render the forgot password page
+        return render(request, "accounts/forgot_password.html", {"form": form})
+
+    # Method to handle post request
+    def post(self, request):
+        # Initialize the form
+        form = ForgotPasswordForm(request.POST)
+
+        # Check if the form is valid
+        if form.is_valid():
+            # Get the form data
+            email = form.cleaned_data.get("email")
+
+            # Get the user
+            user = User.objects.filter(email=email).first()
+
+            # Check if the user exists
+            if user:
+                # Create new token and uid
+                token = default_token_generator.make_token(user)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+                # Create user activation link
+                reset_link = request.build_absolute_uri(
+                    f"/accounts/reset-password/{uid}/{token}/"
+                )
+
+                # Prepare the email data
+                subject = "Reset Your Password"
+                html_content = render_to_string(
+                    "accounts/emails/reset_password_email.html",
+                    {"user": user, "reset_link": reset_link},
+                )
+                text_content = strip_tags(html_content)
+
+                # Create the email
+                email = EmailMultiAlternatives(
+                    subject, text_content, settings.DEFAULT_FROM_EMAIL, [user.email]
+                )
+                email.attach_alternative(html_content, "text/html")
+
+                # Send the email
+                email.send()
+
+                # Create a new token record
+                TokenRecord.objects.create(
+                    user=user, token_type="reset_password", token=token
+                )
+
+                # Add success message
+                messages.success(
+                    request,
+                    "Password Reset Mail Sent Successfully!",
+                    extra_tags="success",
+                )
+
+                # Redirect to the login page
+                return redirect("accounts:login")
+
+            # Add error message
+            messages.error(request, "Invalid Email!", extra_tags="danger")
+
+        # Render the forgot password page
+        return render(request, "accounts/forgot_password.html", {"form": form})
+
+
+# Reset Password View
+class ResetPasswordView(View):
+    """Reset Password View.
+
+    Inherits:
+        View
+
+    Methods:
+        get: Method to handle get request
+        post: Method to handle post request
+    """
+
+    # Method to handle get request
+    def get(self, request, uidb64, token):
+        # Decode the uid
+        uid = force_str(urlsafe_base64_decode(uidb64))
+
+        # Get the user
+        user = get_object_or_404(User, pk=uid)
+
+        # Get the token record
+        token_record = TokenRecord.objects.filter(
+            user=user, token_type="reset_password", token=token
+        ).first()
+
+        # If the token record is not found or is used or is expired
+        if not token_record or token_record.is_used or token_record.is_expired:
+            # Add error message
+            messages.error(
+                request, "Reset Password Link is Invalid!", extra_tags="danger"
+            )
+
+            # Redirect to the login page
+            return redirect("accounts:login")
+
+        # Check if the token is valid
+        if default_token_generator.check_token(user, token):
+            # Initialize the form
+            form = ResetPasswordForm()
+
+            # Render the reset password page
+            return render(
+                request,
+                "accounts/reset_password.html",
+                {"form": form, "user": user, "uidb64": uidb64, "token": token},
+            )
+
+        # Add error message
+        messages.error(request, "Reset Password Link is Invalid!", extra_tags="danger")
+
+        # Redirect to the login page
+        return redirect("accounts:login")
+
+    # Method to handle post request
+    def post(self, request, uidb64, token):
+        # Initialize the form with post data
+        form = ResetPasswordForm(request.POST)
+
+        # Check if the form is valid
+        if form.is_valid():
+            # Decode the uid
+            uid = force_str(urlsafe_base64_decode(uidb64))
+
+            # Get the user
+            user = get_object_or_404(User, pk=uid)
+
+            # Get the token record
+            token_record = TokenRecord.objects.filter(
+                user=user, token_type="reset_password", token=token
+            ).first()
+
+            # If the token record is not found or is used or is expired
+            if not token_record or token_record.is_used or token_record.is_expired:
+                # Add error message
+                messages.error(
+                    request, "Reset Password Link is Invalid!", extra_tags="danger"
+                )
+
+                # Redirect to the login page
+                return redirect("accounts:login")
+
+            # Check if the token is valid
+            if default_token_generator.check_token(user, token):
+                # Set the new password and save
+                user.set_password(form.cleaned_data.get("password1"))
+                user.save()
+
+                # Update and save the token record and set as used
+                token_record.is_used = True
+                token_record.save()
+
+                # Add success message
+                messages.success(
+                    request, "Password Reset Successfully!", extra_tags="success"
+                )
+
+                # Redirect to the login page
+                return redirect("accounts:login")
+
+            # Add error message
+            messages.error(
+                request, "Reset Password Link is Invalid!", extra_tags="danger"
+            )
+
+            # Redirect to the login page
+            return redirect("accounts:login")
+
+        # Render the reset password page
+        return render(
+            request,
+            "accounts/reset_password.html",
+            {"form": form, "uidb64": uidb64, "token": token},
+        )

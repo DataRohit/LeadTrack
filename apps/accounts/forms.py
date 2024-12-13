@@ -157,3 +157,93 @@ class LoginForm(forms.Form):
         if user and not user.check_password(password):
             raise ValidationError("Invalid email or password.")
         return self.cleaned_data
+
+
+# Forgot Password Form
+class ForgotPasswordForm(forms.Form):
+    """Forgot Password Form.
+
+    Inherits:
+        forms.Form
+
+    Attributes:
+        email (str): Email
+
+    Meta:
+        model (User): User
+        fields (list): Fields
+
+    Methods:
+        clean_email: Check if email exists.
+    """
+
+    # Attributes
+    email = forms.EmailField(
+        label="Email",
+        widget=forms.EmailInput(
+            attrs={"class": "form-control", "placeholder": "Email"}
+        ),
+    )
+
+    # Meta class
+    class Meta:
+        # Attributes
+        model = User
+        fields = ["email"]
+
+    # Method to clean email
+    def clean_email(self) -> str:
+        """Check if email exists.
+
+        Returns:
+            str: Email
+        """
+
+        email = self.cleaned_data.get("email")
+        if not User.objects.filter(email=email).exists():
+            raise ValidationError("Email does not exist.")
+        return email
+
+
+# Reset Password Form
+class ResetPasswordForm(forms.Form):
+    """Reset Password Form.
+
+    Inherits:
+        forms.Form
+
+    Attributes:
+        password1 (str): Password
+        password2 (str): Confirm Password
+
+    Methods:
+        clean: Check if passwords match.
+    """
+
+    # Attributes
+    password1 = forms.CharField(
+        label="Password",
+        widget=forms.PasswordInput(
+            attrs={"class": "form-control", "placeholder": "Password"}
+        ),
+    )
+    password2 = forms.CharField(
+        label="Confirm Password",
+        widget=forms.PasswordInput(
+            attrs={"class": "form-control", "placeholder": "Confirm Password"}
+        ),
+    )
+
+    # Method to clean
+    def clean(self) -> dict:
+        """Check if passwords match.
+
+        Returns:
+            dict: Form data
+        """
+
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 != password2:
+            raise ValidationError("Passwords do not match.")
+        return self.cleaned_data

@@ -12,5 +12,5 @@ ROLE_CHOICES = (
 # Token Types
 TOKEN_TYPES = (
     ("activation", _("Activation")),
-    ("password_reset", _("Password Reset")),
+    ("reset_password", _("Reset Password")),
 )
